@@ -34,3 +34,4 @@ local_env.yml
 
 *.pdf
 *.pdf.pages.csv
+*.pdf.embeddings.csv
