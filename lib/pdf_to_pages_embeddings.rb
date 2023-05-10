@@ -1,10 +1,22 @@
-module PdfToPagesEmbeddings
+class PdfToPagesEmbeddings
   require 'csv'
 
   COMPLETIONS_MODEL = 'text-davinci-003'
   MODEL_NAME = 'curie' #if changed, update EMBEDDING_DIMENSIONS
   EMBEDDING_DIMENSIONS = 4096 #directly related to the MODEL_NAME
   DOC_EMBEDDINGS_MODEL = "text-search-#{MODEL_NAME}-doc-001"
+
+  def initialize(filename)
+    # run the process to generate the two CSV files, 
+    #  - one with the pages & their token count
+    #  - one with the pages embeddings
+    @filename = filename
+    @pages_data = extract_pages()
+    make_pages_csv()
+    make_embeddings_csv()
+  end
+
+  private
 
   # Given a string input, this returns the estimated tokens as an int
   # Use Estimate: 1 token ~= 4 characters https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
@@ -15,12 +27,11 @@ module PdfToPagesEmbeddings
     return (token_estimate + (token_estimate * buffer)).round
   end
 
-
   # Returns a 2d array with each page in filename formatted as a row
   # [title, page content string, token count]
-  def extract_pages(filename)
+  def extract_pages()
     csv_rows = []
-    reader = PDF::Reader.new("./#{filename}")
+    reader = PDF::Reader.new("./#{@filename}")
 
     reader.pages.each_with_index do |page, index|
       title = "Page #{index + 1}"
@@ -37,8 +48,8 @@ module PdfToPagesEmbeddings
   end
 
   # Takes the pdf and generates a csv with cols [title, content, tokens]. Where each row is a page from the pdf
-  def make_pages_csv(filename)
-    csv_rows = extract_pages(filename)
+  def make_pages_csv()
+    csv_rows = @pages_data.clone
     csv_rows.insert(0, ["title", "content", "tokens"])
 
     csv_file = CSV.generate(headers: true) do |csv|
@@ -46,7 +57,7 @@ module PdfToPagesEmbeddings
     end
 
     # write to file
-    path = Rails.root + "./#{filename}.pages.csv"
+    path = Rails.root + "./#{@filename}.pages.csv"
     File.open(path, 'w') { |f| f.write(csv_file) }
   end
 
@@ -63,15 +74,12 @@ module PdfToPagesEmbeddings
 
   # Generates a csv with a row for each page in the pdf (filename) 
   # cols will be the page text embeddings.
-  def make_embeddings_csv(filename)  
+  def make_embeddings_csv()
     csv_rows = [["title"] + (0..EMBEDDING_DIMENSIONS).to_a]
 
-    # pull only the text from the pages.csv data (2nd col)
-    inputs = extract_pages(filename).map{ |page| page[1] }
-
-    # get embeddings for each page
-    inputs.each_with_index do |input, index|
-      csv_rows << ["Page #{index + 1}"] + get_embedding(input)
+    # get embeddings for each page. data[0] is the title, data[1] is the page string content
+    @pages_data.each do |data|
+      csv_rows << ["#{data[0]}"] + get_embedding(data[1])
     end
 
     csv_file = CSV.generate(headers: true) do |csv|
@@ -79,7 +87,7 @@ module PdfToPagesEmbeddings
     end
 
     # write to file
-    path = Rails.root + "./#{filename}.embeddings.csv"
+    path = Rails.root + "./#{@filename}.embeddings.csv"
     File.open(path, 'w') { |f| f.write(csv_file) }
   end
 
