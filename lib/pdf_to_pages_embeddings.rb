@@ -1,19 +1,19 @@
 class PdfToPagesEmbeddings
   require 'csv'
 
-  COMPLETIONS_MODEL = 'text-davinci-003'
-  MODEL_NAME = 'curie' #if changed, update EMBEDDING_DIMENSIONS
-  EMBEDDING_DIMENSIONS = 4096 #directly related to the MODEL_NAME
-  DOC_EMBEDDINGS_MODEL = "text-search-#{MODEL_NAME}-doc-001"
+  COMPLETIONS_MODEL = 'text-davinci-003'.freeze
+  MODEL_NAME = 'curie'.freeze # if changed, update EMBEDDING_DIMENSIONS
+  EMBEDDING_DIMENSIONS = 4096 # directly related to the MODEL_NAME
+  DOC_EMBEDDINGS_MODEL = "text-search-#{MODEL_NAME}-doc-001".freeze
 
   def initialize(filename)
-    # run the process to generate the two CSV files, 
+    # run the process to generate the two CSV files,
     #  - one with the pages & their token count
     #  - one with the pages embeddings
     @filename = filename
-    @pages_data = extract_pages()
-    make_pages_csv()
-    make_embeddings_csv()
+    @pages_data = extract_pages
+    make_pages_csv
+    make_embeddings_csv
   end
 
   private
@@ -24,12 +24,12 @@ class PdfToPagesEmbeddings
   def count_tokens(input)
     buffer = 0.05
     token_estimate = (input.to_s.length / 4)
-    return (token_estimate + (token_estimate * buffer)).round
+    (token_estimate + (token_estimate * buffer)).round
   end
 
   # Returns a 2d array with each page in filename formatted as a row
   # [title, page content string, token count]
-  def extract_pages()
+  def extract_pages
     csv_rows = []
     reader = PDF::Reader.new("./#{@filename}")
 
@@ -39,56 +39,53 @@ class PdfToPagesEmbeddings
       tokens = count_tokens(page.text)
 
       # Only include rows where tokens is less than 2046
-      if tokens < 2046
-        csv_rows << [title, content, tokens]
-      end
+      csv_rows << [title, content, tokens] if tokens < 2046
     end
 
-    return csv_rows
+    csv_rows
   end
 
   # Takes the pdf and generates a csv with cols [title, content, tokens]. Where each row is a page from the pdf
-  def make_pages_csv()
+  def make_pages_csv
     csv_rows = @pages_data.clone
-    csv_rows.insert(0, ["title", "content", "tokens"])
+    csv_rows.insert(0, %w[title content tokens])
 
     csv_file = CSV.generate(headers: true) do |csv|
-      csv_rows.each {|row| csv << row}
+      csv_rows.each { |row| csv << row }
     end
 
     # write to file
     path = Rails.root + "./#{@filename}.pages.csv"
-    File.open(path, 'w') { |f| f.write(csv_file) }
+    File.write(path, csv_file)
   end
 
   # returns an array of length EMBEDDING_DIMENSIONS for the embeddings for the given input
-  def get_embedding(input)
+  def get_embedding(text)
     result = OpenAI::Client.new.embeddings(
       parameters: {
         model: DOC_EMBEDDINGS_MODEL,
-        input: input
+        input: text
       }
     )
-    return result.dig("data", 0, "embedding")
+    result.dig("data", 0, "embedding")
   end
 
-  # Generates a csv with a row for each page in the pdf (filename) 
+  # Generates a csv with a row for each page in the pdf (filename)
   # cols will be the page text embeddings.
-  def make_embeddings_csv()
+  def make_embeddings_csv
     csv_rows = [["title"] + (0..EMBEDDING_DIMENSIONS).to_a]
 
     # get embeddings for each page. data[0] is the title, data[1] is the page string content
     @pages_data.each do |data|
-      csv_rows << ["#{data[0]}"] + get_embedding(data[1])
+      csv_rows << ([data[0].to_s] + get_embedding(data[1]))
     end
 
     csv_file = CSV.generate(headers: true) do |csv|
-      csv_rows.each {|row| csv << row}
+      csv_rows.each { |row| csv << row }
     end
 
     # write to file
     path = Rails.root + "./#{@filename}.embeddings.csv"
-    File.open(path, 'w') { |f| f.write(csv_file) }
+    File.write(path, csv_file)
   end
-
 end
