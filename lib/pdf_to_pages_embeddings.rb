@@ -5,18 +5,36 @@ class PdfToPagesEmbeddings
   MODEL_NAME = 'curie'.freeze # if changed, update EMBEDDING_DIMENSIONS
   EMBEDDING_DIMENSIONS = 4096 # directly related to the MODEL_NAME
   DOC_EMBEDDINGS_MODEL = "text-search-#{MODEL_NAME}-doc-001".freeze
+  COMPLETIONS_API_PARAMS = {
+    # We use temperature of 0.0 because it gives the most predictable, factual answer.
+    temperature: 0.0,
+    max_tokens: 150,
+    model: "text-davinci-003"
+  }.freeze
 
-  def initialize(filename)
+  def initialize(filename = "siddhartha-full.pdf")
+    @filename = filename
+  end
+
+  def make_csvs
     # run the process to generate the two CSV files,
     #  - one with the pages & their token count
     #  - one with the pages embeddings
-    @filename = filename
     @pages_data = extract_pages
     make_pages_csv
     make_embeddings_csv
   end
 
-  private
+  # returns an array of length EMBEDDING_DIMENSIONS for the embeddings for the given input
+  def get_embedding(text)
+    result = OpenAI::Client.new.embeddings(
+      parameters: {
+        model: DOC_EMBEDDINGS_MODEL,
+        input: text
+      }
+    )
+    result.dig("data", 0, "embedding")
+  end
 
   # Given a string input, this returns the estimated tokens as an int
   # Use Estimate: 1 token ~= 4 characters https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
@@ -26,6 +44,21 @@ class PdfToPagesEmbeddings
     token_estimate = (input.to_s.length / 4)
     (token_estimate + (token_estimate * buffer)).round
   end
+
+  # creates a hash from the embeddings.csv with the title (key) & an array of the embeddings (value)
+  def load_document_embeddings
+    output = {}
+
+    CSV.foreach("./#{@filename}.embeddings.csv", headers: false, converters: :float) do |row|
+      next if row[0] == "title"
+
+      output[row[0]] = row.to_a.drop(1)
+    end
+
+    output
+  end
+
+  private
 
   # Returns a 2d array with each page in filename formatted as a row
   # [title, page content string, token count]
@@ -57,17 +90,6 @@ class PdfToPagesEmbeddings
     # write to file
     path = Rails.root + "./#{@filename}.pages.csv"
     File.write(path, csv_file)
-  end
-
-  # returns an array of length EMBEDDING_DIMENSIONS for the embeddings for the given input
-  def get_embedding(text)
-    result = OpenAI::Client.new.embeddings(
-      parameters: {
-        model: DOC_EMBEDDINGS_MODEL,
-        input: text
-      }
-    )
-    result.dig("data", 0, "embedding")
   end
 
   # Generates a csv with a row for each page in the pdf (filename)
