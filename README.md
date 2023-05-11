@@ -11,7 +11,7 @@
    Add your PDF (book.pdf) to the project root directory and run the following in `rails console`
 
    ```
-   PdfToPagesEmbeddings.new("book.pdf")
+   EmbeddingsFunctions.new("book.pdf").make_csvs
    ```
 
 _Note: A few initial commits were lost for the setup & functions to convert the PDF to CSV. This is because I regenerated the project with Rails 7._

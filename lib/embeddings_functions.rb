@@ -1,16 +1,9 @@
-class PdfToPagesEmbeddings
+class EmbeddingsFunctions
   require 'csv'
 
-  COMPLETIONS_MODEL = 'text-davinci-003'.freeze
   MODEL_NAME = 'curie'.freeze # if changed, update EMBEDDING_DIMENSIONS
   EMBEDDING_DIMENSIONS = 4096 # directly related to the MODEL_NAME
   DOC_EMBEDDINGS_MODEL = "text-search-#{MODEL_NAME}-doc-001".freeze
-  COMPLETIONS_API_PARAMS = {
-    # We use temperature of 0.0 because it gives the most predictable, factual answer.
-    temperature: 0.0,
-    max_tokens: 150,
-    model: "text-davinci-003"
-  }.freeze
 
   def initialize(filename = "siddhartha-full.pdf")
     @filename = filename
