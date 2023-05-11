@@ -1,7 +1,8 @@
-require 'matrix'
-
 # When called with a question query, this will return a Question object that contains the answer.
 class Ask < ApplicationService
+  include PromptData
+  require 'matrix'
+
   MAX_SECTION_LEN = 500
   SEPARATOR = "\n* ".freeze
   SEPARATOR_LEN = 3
@@ -73,20 +74,16 @@ class Ask < ApplicationService
       chosen_sections_indexes.push(page_index.to_s)
     end
 
-    # TODO: update the header & Questions
-    header = "This is the header"
-    question1 = "\n\n\nQ: sample question 1?\n\nA: First answer"
-
     chosen_pages_text = chosen_sections.join
-    prompt = "#{header} #{chosen_pages_text} #{question1} \n\n\nQ: #{@query} \n\nA: "
+    prompt = "#{PROMPT_HEADER} #{chosen_pages_text} #{Q1} #{Q2} #{Q3} #{Q4} #{Q5} \n\n\nQ: #{@query} \n\nA: "
 
     { prompt:, page_text: chosen_pages_text }
   end
 
-  # # return the query answer & context of similar document sections.
-  # def answer_query_with_context
-  #   Rails.logger.debug { "answer_query_with_context" }
-  # end
+  # return the query answer & context of similar document sections.
+  def answer_query_with_context
+    Rails.logger.debug { "answer_query_with_context" }
+  end
 
   def test_embedding
     puts "USING TEST DATA"
