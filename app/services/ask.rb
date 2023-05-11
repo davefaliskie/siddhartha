@@ -97,7 +97,7 @@ class Ask < ApplicationService
     chosen_pages_text = chosen_sections.join
     prompt = "#{PROMPT_HEADER} #{chosen_pages_text} #{Q1} #{Q2} #{Q3} #{Q4} #{Q5} \n\n\nQ: #{@query} \n\nA: "
 
-    { prompt:, page_text: chosen_pages_text }
+    { prompt: prompt, page_text: chosen_pages_text }
   end
 
   # return the query answer
