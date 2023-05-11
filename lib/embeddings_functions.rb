@@ -43,7 +43,8 @@ class EmbeddingsFunctions
     output = {}
 
     CSV.foreach("./#{@filename}.embeddings.csv", headers: false, converters: :float) do |row|
-      next if row[0] == "title"
+      # skip heading & Page 1; Page 1 was showing in all results probably because it's the table of contents & comparing is skewed.
+      next if ["title", "Page 1"].include?(row[0])
 
       output[row[0]] = row.to_a.drop(1)
     end

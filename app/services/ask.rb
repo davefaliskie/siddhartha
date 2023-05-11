@@ -93,7 +93,6 @@ class Ask < ApplicationService
 
   # return the query answer
   def answer_query
-    Rails.logger.debug { "PROMPT #{@prompt}" }
     response = OpenAI::Client.new.completions(
       parameters: {
         prompt: @prompt,
