@@ -17,7 +17,9 @@ class Ask < ApplicationService
   end
 
   def call
-    # TODO: if the query was already asked, return the Question
+    # if the query was already asked, return the Question
+    existing_questions = Question.where(question: @query)
+    return existing_questions.first if existing_questions.present?
 
     # find the answer by generating an embedding for the query & comparing it to the embeddings we already have.
     @query_embedding = @embeddings_functions.get_embedding(@query)
@@ -34,7 +36,12 @@ class Ask < ApplicationService
     @answer = answer_query
 
     # save & return the Question
-    Rails.logger.debug { "ANSWER: #{@answer}" }
+    Question.create(
+      question: @query,
+      answer: @answer,
+      context: @context,
+      ask_count: 1
+    )
   end
 
   private
@@ -68,6 +75,8 @@ class Ask < ApplicationService
     chosen_sections_len = 0
     chosen_sections_indexes = []
 
+    # Rails.logger.debug {"order_document_sections_by_query_similarity: #{order_document_sections_by_query_similarity}"}
+
     order_document_sections_by_query_similarity.each do |_, page_index|
       # get the page content by page_index
       section_text, tokens = @embeddings_functions.get_page_content(page_index)
@@ -84,7 +93,7 @@ class Ask < ApplicationService
       chosen_sections_indexes.push(page_index.to_s)
     end
 
-    Rails.logger.debug { "chosen_sections_indexes: #{chosen_sections_indexes}" }
+    # Rails.logger.debug { "chosen_sections_indexes: #{chosen_sections_indexes}" }
     chosen_pages_text = chosen_sections.join
     prompt = "#{PROMPT_HEADER} #{chosen_pages_text} #{Q1} #{Q2} #{Q3} #{Q4} #{Q5} \n\n\nQ: #{@query} \n\nA: "
 
@@ -102,6 +111,7 @@ class Ask < ApplicationService
       }
     )
 
+    # Rails.logger.debug { "response: #{response}" }
     response["choices"].first["text"].delete("\n").strip
   end
 end
