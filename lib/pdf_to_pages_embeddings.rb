@@ -58,6 +58,12 @@ class PdfToPagesEmbeddings
     output
   end
 
+  def get_page_content(page_index)
+    CSV.foreach("./#{@filename}.pages.csv", headers: false) do |row|
+      return row[1], row[2].to_i if row[0] == page_index
+    end
+  end
+
   private
 
   # Returns a 2d array with each page in filename formatted as a row

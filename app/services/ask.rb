@@ -2,13 +2,17 @@ require 'matrix'
 
 # When called with a question query, this will return a Question object that contains the answer.
 class Ask < ApplicationService
+  MAX_SECTION_LEN = 500
+  SEPARATOR = "\n* ".freeze
+  SEPARATOR_LEN = 3
+
   def initialize(query, filename = "siddhartha-full.pdf")
     @query = format_query(query)
     @embeddings_functions = PdfToPagesEmbeddings.new(filename)
   end
 
   def call
-    # TODO: if the quest was already asked, return the Question
+    # TODO: if the query was already asked, return the Question
 
     # find the answer by generating an embedding for the query & comparing it to the embeddings we already have.
     # query_embeddings = @embeddings_functions.get_embedding(@query)
@@ -19,8 +23,7 @@ class Ask < ApplicationService
     # relevant_document_sections = order_document_sections_by_query_similarity
 
     # save & return the Question
-    Rails.logger.debug { "document embeddings: #{@document_embeddings.length}" }
-    Rails.logger.debug { "document keys: #{order_document_sections_by_query_similarity}" }
+    Rails.logger.debug { "PROMPT: #{construct_prompt[:prompt]}" }
   end
 
   private
@@ -31,12 +34,12 @@ class Ask < ApplicationService
     q.ends_with?("?") ? q : "#{q}?"
   end
 
-  # returns the dot product
+  # returns the dot product of query_embedding & param embedding
   def query_embedding_similarity(embedding)
     @query_embedding.zip(embedding).reduce(0) { |sum, (a, b)| sum + (a * b) }
   end
 
-  # return the document embeddings ordered by relavence (higher dot product w/ query embeddings)
+  # return the document embeddings ordered by relavence (higher dot product between query embeddings)
   def order_document_sections_by_query_similarity
     document_similarities = []
 
@@ -48,13 +51,40 @@ class Ask < ApplicationService
     document_similarities.sort_by { |item| item[0] }.reverse
   end
 
+  # # returns the prompt for completion & chosen page text as hash
+  def construct_prompt
+    chosen_sections = []
+    chosen_sections_len = 0
+    chosen_sections_indexes = []
+
+    order_document_sections_by_query_similarity.each do |_, page_index|
+      # get the page content by page_index
+      section_text, tokens = @embeddings_functions.get_page_content(page_index)
+
+      chosen_sections_len += (tokens + SEPARATOR_LEN)
+      if chosen_sections_len > MAX_SECTION_LEN
+        space_left = MAX_SECTION_LEN - chosen_sections_len - SEPARATOR.length
+        chosen_sections.push("#{SEPARATOR} #{section_text[...space_left]}")
+        chosen_sections_indexes.append(page_index.to_s)
+        break
+      end
+
+      chosen_sections.push(SEPARATOR + section_text)
+      chosen_sections_indexes.push(page_index.to_s)
+    end
+
+    # TODO: update the header & Questions
+    header = "This is the header"
+    question1 = "\n\n\nQ: sample question 1?\n\nA: First answer"
+
+    chosen_pages_text = chosen_sections.join
+    prompt = "#{header} #{chosen_pages_text} #{question1} \n\n\nQ: #{@query} \n\nA: "
+
+    { prompt:, page_text: chosen_pages_text }
+  end
+
   # # return the query answer & context of similar document sections.
   # def answer_query_with_context
-  #   Rails.logger.debug { "answer_query_with_context" }
-  # end
-
-  # # returns the prompt with examples that can be passed to openAi completion endpoint
-  # def construct_prompt
   #   Rails.logger.debug { "answer_query_with_context" }
   # end
 
