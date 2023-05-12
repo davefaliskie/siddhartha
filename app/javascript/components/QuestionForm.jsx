@@ -1,4 +1,4 @@
-import React, { useState }  from 'react'
+import React, { useState, useEffect }  from 'react'
 
 function QuestionForm() {
   // Set default question here, it'll hit the api cache for the answer.
@@ -7,6 +7,10 @@ function QuestionForm() {
   const [showAskButton, setShowAskButton] = useState(true);
 
   const handleChange = (event) => {
+    event.preventDefault();
+    if (answer !== '') {
+      handleReset()
+    }
     setQuery(event.target.value);
   };
 
@@ -42,15 +46,12 @@ function QuestionForm() {
       });
   };
 
-  const handleReset = (event) => {
-    event.preventDefault();
-
+  const handleReset = () => {
     setQuery('');
     setAnswer('');
     setShowAskButton(true);
     document.getElementById('question').focus();
   };
-
 
   return (
     <form onSubmit={handleSubmit}>
