@@ -59,6 +59,7 @@ function QuestionForm() {
         id="question"
         value={query}
         onChange={handleChange}
+        placeholder="Enter your question"
       ></textarea>
 
       {showAskButton ? (
