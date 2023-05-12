@@ -43,7 +43,8 @@ class EmbeddingsFunctions
     output = {}
 
     CSV.foreach("./#{@filename}.embeddings.csv", headers: false, converters: :float) do |row|
-      # skip heading & Page 1; Page 1 was showing in all results probably because it's the table of contents & comparing is skewed.
+      # skip heading & Page 1;
+      # Page 1 was showing in all results probably because it's the table of contents & comparing is skewed.
       next if ["title", "Page 1"].include?(row[0])
 
       output[row[0]] = row.to_a.drop(1)
@@ -87,7 +88,6 @@ class EmbeddingsFunctions
       csv_rows.each { |row| csv << row }
     end
 
-    # write to file
     path = Rails.root + "./#{@filename}.pages.csv"
     File.write(path, csv_file)
   end
@@ -106,7 +106,6 @@ class EmbeddingsFunctions
       csv_rows.each { |row| csv << row }
     end
 
-    # write to file
     path = Rails.root + "./#{@filename}.embeddings.csv"
     File.write(path, csv_file)
   end

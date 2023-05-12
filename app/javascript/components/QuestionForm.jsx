@@ -1,10 +1,10 @@
 import React, { useState }  from 'react'
 
 function QuestionForm() {
+  // Set default question here, it'll hit the api cache for the answer.
   const [query, setQuery] = useState('What is this book about?');
   const [answer, setAnswer] = useState('');
   const [showAskButton, setShowAskButton] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
     setQuery(event.target.value);

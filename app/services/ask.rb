@@ -17,25 +17,26 @@ class Ask < ApplicationService
   end
 
   def call
-    # if the query was already asked, return the Question
+    # if the query was already asked, return the cached Question
     existing_questions = Question.where(question: @query).first
     if existing_questions.present?
       existing_questions.update(ask_count: existing_questions.ask_count += 1)
       return existing_questions
     end
 
-    # find the answer by generating an embedding for the query & comparing it to the embeddings we already have.
+    # find the answer with openAI
+    # first generate an embedding for the query
     @query_embedding = @embeddings_functions.get_embedding(@query)
 
-    # hash of the pre-generated embeddings, where the page# is the key & the embedding is the value
+    # get hash of the pre-generated embeddings, where the page# is the key & the embedding is the value
     @document_embeddings = @embeddings_functions.load_document_embeddings
 
-    # generate the prompt & save the book context given in the prompt
+    # generate the prompt using the embeddings to determine the most relevant book context
     prompt_data = construct_prompt_with_page_text
     @prompt = prompt_data[:prompt]
     @context = prompt_data[:page_text]
 
-    # Get the answer from OpenAI
+    # Make the call to OpenAI
     @answer = answer_query
 
     # save & return the Question
