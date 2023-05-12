@@ -18,8 +18,11 @@ class Ask < ApplicationService
 
   def call
     # if the query was already asked, return the Question
-    existing_questions = Question.where(question: @query)
-    return existing_questions.first if existing_questions.present?
+    existing_questions = Question.where(question: @query).first
+    if existing_questions.present?
+      existing_questions.update(ask_count: existing_questions.ask_count += 1)
+      return existing_questions
+    end
 
     # find the answer by generating an embedding for the query & comparing it to the embeddings we already have.
     @query_embedding = @embeddings_functions.get_embedding(@query)

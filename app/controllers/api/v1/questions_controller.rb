@@ -1,6 +1,6 @@
 class Api::V1::QuestionsController < ApplicationController
   def ask
-    @question = Ask.new(prams[:query]).call
-    render json: @question
+    @question = Ask.new(params[:query]).call
+    render json: { answer: @question.answer }
   end
 end
