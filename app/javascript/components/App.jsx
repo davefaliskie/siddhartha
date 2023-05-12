@@ -1,12 +1,18 @@
-import React, { useState } from 'react'
+import React from 'react'
+import Header from './Header'
+import Main from './Main'
 
 function App() {
-  const [count, setCount] = useState(0);
   return (
-    <div>
-      <p>You clicked {count} times!</p>
-      <button onClick={() => setCount(count + 1)}>Click</button>
-    </div>
+    <>
+      <Header />
+      <Main />
+      <footer>
+        <p className="credits">
+          Project by <a href="https://twitter.com/davefaliskie" target="_blank">Dave Faliskie</a> • <a href="https://github.com/davefaliskie/siddhartha" target="_blank">Fork on GitHub</a>
+        </p>
+      </footer>
+    </>
   )
 }
 
