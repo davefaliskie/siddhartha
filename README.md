@@ -14,4 +14,6 @@
    EmbeddingsFunctions.new("book.pdf").make_csvs
    ```
 
+run with `bin/dev`
+
 _Note: A few initial commits were lost for the setup & functions to convert the PDF to CSV. This is because I regenerated the project with Rails 7._

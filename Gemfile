@@ -9,13 +9,13 @@ gem "sprockets-rails"
 gem "pg", "~> 1.1"
 gem "puma", "~> 5.0"
 gem 'sass-rails', '>= 6'
-gem "importmap-rails"
 gem "turbo-rails"
 gem "stimulus-rails"
 gem "jbuilder"
 gem "redis", "~> 4.0"
 gem "pdf-reader"
 gem "ruby-openai"
+gem "jsbundling-rails", "~> 1.1"
 
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
@@ -41,3 +41,4 @@ group :test do
   gem "selenium-webdriver"
   gem "webdrivers"
 end
+
